@@ -33,8 +33,8 @@ function Movies() {
     <>
       <Query
         query={gql`
-          query searchMovies($year: Int) {
-            movies(year: $year) {
+          query searchMovies($filters: MovieFilters) {
+            movies(filters: $filters) {
               count
               movies {
                 _id
@@ -46,7 +46,9 @@ function Movies() {
           }
         `}
         variables={{
-          year,
+          filters: {
+            year,
+          },
         }}
       >
         {({ data, loading, error }) => {

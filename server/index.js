@@ -76,12 +76,23 @@ const typeDefs = gql`
     count: Int!
   }
 
+  input MovieFilters {
+    _id: ID
+    title: String
+    year: Int
+  }
+
+  input Pagination {
+    limit: Int
+    offset: Int
+  }
+
   type Query {
     moviesCount: Int!
     usersCount: Int!
     dbName: String
     users(name: String): [User]!
-    movies(title: String, _id: ID, year: Int): MovieResponse
+    movies(filters: MovieFilters, page: Pagination): MovieResponse
   }
 `;
 
@@ -97,15 +108,20 @@ const resolvers = {
         .collection('users')
         .find({ ...args })
         .toArray(),
-    movies: (parent, args, { db }) => {
-      const moviesArray = db
+    movies: (parent, { filters, page: { offset = 0, limit = 20 } = {} }, { db }) => {
+      const moviesArrayCursor = db
         .collection('movies')
-        .find({ ...args })
+        .find({ ...filters });
+
+      const count = moviesArrayCursor.count();
+      const movies = moviesArrayCursor
+        .skip(offset)
+        .limit(limit)
         .toArray();
 
       return {
-        movies: moviesArray,
-        count: moviesArray.then(data => data.length),
+        movies,
+        count,
       };
     },
   },
