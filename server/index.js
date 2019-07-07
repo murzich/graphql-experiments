@@ -3,7 +3,11 @@ const { ApolloServer, gql } = require('apollo-server');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
+const { GraphQLTypeDate } = require('./scalars')
+
 const typeDefs = gql`
+  scalar Date
+
   type User {
     _id: String!
     name: String!
@@ -58,7 +62,7 @@ const typeDefs = gql`
     type: String
     poster: String
     num_mflix_comments: Int
-    released: Int
+    released: Date
     runtime: Int
     directors: [String]
     cast: [String]
@@ -97,6 +101,7 @@ const typeDefs = gql`
 `;
 
 const resolvers = {
+  Date: GraphQLTypeDate,
   Query: {
     moviesCount: (parent, args, { db }) =>
       db.collection('movies').estimatedDocumentCount(),
