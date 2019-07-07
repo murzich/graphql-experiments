@@ -71,12 +71,17 @@ const typeDefs = gql`
     imdb: Imdb
   }
 
+  type MovieResponse {
+    movies: [Movie]!
+    count: Int!
+  }
+
   type Query {
     moviesCount: Int!
     usersCount: Int!
     dbName: String
     users(name: String): [User]!
-    movies(title: String, _id: ID, year: Int): [Movie]!
+    movies(title: String, _id: ID, year: Int): MovieResponse
   }
 `;
 
@@ -92,11 +97,17 @@ const resolvers = {
         .collection('users')
         .find({ ...args })
         .toArray(),
-    movies: (parent, args, { db }) =>
-      db
+    movies: (parent, args, { db }) => {
+      const moviesArray = db
         .collection('movies')
         .find({ ...args })
-        .toArray(),
+        .toArray();
+
+      return {
+        movies: moviesArray,
+        count: moviesArray.then(data => data.length),
+      };
+    },
   },
 };
 
