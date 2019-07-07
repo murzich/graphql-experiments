@@ -109,10 +109,15 @@ const resolvers = {
         .find({ ...args })
         .toArray(),
     movies: (parent, { filters, page: { offset = 0, limit = 20 } = {} }, { db }) => {
+      const currentYear = new Date().getFullYear();
+      const year = (filters.year > 1877 && filters.year <= currentYear)
+        ? filters.year
+        : undefined;
       const title = new RegExp(filters.title, 'i');
+
       const moviesArrayCursor = db
         .collection('movies')
-        .find({ ...filters, title });
+        .find({ ...filters, title, year });
 
       const count = moviesArrayCursor.count();
       const movies = moviesArrayCursor
