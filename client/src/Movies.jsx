@@ -2,15 +2,16 @@ import gql from 'graphql-tag';
 import React, { useState } from 'react';
 import { Query } from 'react-apollo';
 import {
+  Button,
   Dimmer,
   Header,
+  Input,
   Item,
   Label,
   Loader,
   Message,
   Placeholder,
   Segment,
-  Input,
 } from 'semantic-ui-react';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/150';
@@ -33,8 +34,8 @@ function Movies() {
     <>
       <Query
         query={gql`
-          query searchMovies($filters: MovieFilters) {
-            movies(filters: $filters) {
+          query searchMovies($filters: MovieFilters, $page: Pagination) {
+            movies(filters: $filters, page: $page) {
               count
               movies {
                 _id
@@ -51,7 +52,7 @@ function Movies() {
           },
         }}
       >
-        {({ data, loading, error }) => {
+        {({ data, loading, error, fetchMore }) => {
           if (error) {
             return (
               <Message error>
@@ -80,22 +81,49 @@ function Movies() {
 
                 <Item.Group>
                   {data && data.movies ? (
-                    data.movies.movies.map(
-                      ({ _id: id, title, runtime, poster }) => (
-                        <Item key={id}>
-                          <Item.Image
-                            size="tiny"
-                            src={poster || PLACEHOLDER_IMG}
-                          />
-                          <Item.Content>
-                            <Item.Header>{title}</Item.Header>
-                            <Item.Description>
-                              duration: {runtime} min
-                            </Item.Description>
-                          </Item.Content>
-                        </Item>
-                      ),
-                    )
+                    <>
+                      {data.movies.movies.map(
+                        ({ _id: id, title, runtime, poster }) => (
+                          <Item key={id}>
+                            <Item.Image
+                              size="tiny"
+                              src={poster || PLACEHOLDER_IMG}
+                            />
+                            <Item.Content>
+                              <Item.Header>{title}</Item.Header>
+                              <Item.Description>
+                                duration: {runtime} min
+                              </Item.Description>
+                            </Item.Content>
+                          </Item>
+                        ),
+                      )}
+                      <Button
+                        disabled={data.movies.count <= data.movies.movies.length}
+                        onClick={() =>
+                          fetchMore({
+                            variables: {
+                              page: { offset: data.movies.movies.length },
+                            },
+                            updateQuery: (prev, { fetchMoreResult }) => {
+                              if (!fetchMoreResult) return prev;
+                              return {
+                                ...prev,
+                                movies: {
+                                  ...prev.movies,
+                                  movies: [
+                                    ...prev.movies.movies,
+                                    ...fetchMoreResult.movies.movies,
+                                  ],
+                                }
+                              };
+                            },
+                          })
+                        }
+                      >
+                        fetchMore
+                      </Button>
+                    </>
                   ) : (
                     <Item>
                       <Placeholder>
