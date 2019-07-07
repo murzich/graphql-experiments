@@ -13,11 +13,14 @@ import {
   Placeholder,
   Segment,
 } from 'semantic-ui-react';
+import debounce from 'lodash.debounce';
 
 const PLACEHOLDER_IMG = 'https://via.placeholder.com/150';
 
 function Movies() {
   const [year, setYear] = useState(1963);
+
+  const debounceSetYear = debounce(setYear, 500);
 
   function handleYearChange(event) {
     event.preventDefault();
@@ -26,8 +29,19 @@ function Movies() {
     const intValue = parseInt(value);
     const currentYear = new Date().getFullYear();
     if (intValue > 1877 && intValue <= currentYear) {
-      setYear(intValue);
+      debounceSetYear(intValue);
     }
+  }
+
+  const [title, setTitle] = useState();
+
+  const debounceSetTitle = debounce(setTitle, 500);
+
+  function handleTitleChange(event) {
+    event.preventDefault();
+    const { value } = event.target;
+
+    debounceSetTitle(value);
   }
 
   return (
@@ -49,6 +63,7 @@ function Movies() {
         variables={{
           filters: {
             year,
+            title,
           },
         }}
       >
@@ -67,13 +82,27 @@ function Movies() {
               <Header as="h2">
                 Movies
                 {data && data.movies && <Label>{data.movies.count}</Label>}
+              </Header>
+              <Segment>
+                <Header as="h3">Fiilters</Header>
                 <Input
                   name="year"
+                  type="number"
                   onChange={handleYearChange}
                   placeholder="year"
                   defaultValue={year}
+                  label="Year"
+                  size="mini"
                 />
-              </Header>
+                <Input
+                  name="title"
+                  type="search"
+                  onChange={handleTitleChange}
+                  placeholder="Movie title"
+                  label="Title"
+                  size="mini"
+                />
+              </Segment>
               <Segment>
                 <Dimmer active={loading}>
                   <Loader>Loading</Loader>
@@ -99,7 +128,9 @@ function Movies() {
                         ),
                       )}
                       <Button
-                        disabled={data.movies.count <= data.movies.movies.length}
+                        disabled={
+                          data.movies.count <= data.movies.movies.length
+                        }
                         onClick={() =>
                           fetchMore({
                             variables: {
@@ -115,7 +146,7 @@ function Movies() {
                                     ...prev.movies.movies,
                                     ...fetchMoreResult.movies.movies,
                                   ],
-                                }
+                                },
                               };
                             },
                           })

@@ -109,9 +109,10 @@ const resolvers = {
         .find({ ...args })
         .toArray(),
     movies: (parent, { filters, page: { offset = 0, limit = 20 } = {} }, { db }) => {
+      const title = new RegExp(filters.title, 'i');
       const moviesArrayCursor = db
         .collection('movies')
-        .find({ ...filters });
+        .find({ ...filters, title });
 
       const count = moviesArrayCursor.count();
       const movies = moviesArrayCursor
