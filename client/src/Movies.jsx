@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { Query } from 'react-apollo';
 import {
   Button,
+  Checkbox,
   Dimmer,
+  Form,
   Header,
   Input,
   Item,
@@ -12,6 +14,7 @@ import {
   Message,
   Placeholder,
   Segment,
+  Select,
 } from 'semantic-ui-react';
 import debounce from 'lodash.debounce';
 
@@ -44,12 +47,26 @@ function Movies() {
     debounceSetTitle(value);
   }
 
+  const [sort, setSort] = useState({ year: 1 });
+
+  function handleSortChange(event, { value }) {
+    setSort({ [value]: Object.values(sort)[0] });
+  }
+
+  function handleSortDirectionChange() {
+    setSort({ [Object.keys(sort)[0]]: Object.values(sort)[0] === 1 ? -1 : 1 });
+  }
+
   return (
     <>
       <Query
         query={gql`
-          query searchMovies($filters: MovieFilters, $page: Pagination) {
-            movies(filters: $filters, page: $page) {
+          query searchMovies(
+            $filters: MovieFilters
+            $page: Pagination
+            $sort: MovieSort
+          ) {
+            movies(filters: $filters, page: $page, sort: $sort) {
               count
               movies {
                 _id
@@ -65,6 +82,7 @@ function Movies() {
             year,
             title,
           },
+          sort,
         }}
       >
         {({ data, loading, error, fetchMore }) => {
@@ -102,6 +120,27 @@ function Movies() {
                   label="Title"
                   size="mini"
                 />
+                <Form>
+                  <Label>Sort by</Label>
+                  <Select
+                    additionLabel="Sort by"
+                    name="sort"
+                    placeholder="Choose sort"
+                    options={[
+                      { key: 'year', value: 'year', text: 'default' },
+                      { key: 'released', value: 'released', text: 'released' },
+                      { key: 'title', value: 'title', text: 'title' },
+                    ]}
+                    onChange={handleSortChange}
+                    defaultValue={Object.keys(sort)[0]}
+                    size="mini"
+                  />
+                  <Checkbox
+                    label="Desc"
+                    checked={Object.values(sort)[0] === -1 ? true : false}
+                    onChange={handleSortDirectionChange}
+                  />
+                </Form>
               </Segment>
               <Segment>
                 <Dimmer active={loading}>

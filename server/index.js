@@ -86,6 +86,13 @@ const typeDefs = gql`
     year: Int
   }
 
+  input MovieSort {
+    year: Int
+    title: Int
+    released: Int
+    runtime: Int
+  }
+
   input Pagination {
     limit: Int
     offset: Int
@@ -96,7 +103,7 @@ const typeDefs = gql`
     usersCount: Int!
     dbName: String
     users(name: String): [User]!
-    movies(filters: MovieFilters, page: Pagination): MovieResponse
+    movies(filters: MovieFilters, page: Pagination, sort: MovieSort): MovieResponse
   }
 `;
 
@@ -113,7 +120,20 @@ const resolvers = {
         .collection('users')
         .find({ ...args })
         .toArray(),
-    movies: (parent, { filters, page: { offset = 0, limit = 20 } = {} }, { db }) => {
+    movies: (
+      parent,
+      {
+        filters,
+        sort = {},
+        page: { offset = 0, limit = 20 } = {},
+      },
+      { db }
+    ) => {
+      // support only one field for sorting for now
+      if (Object.keys(sort).length > 1) {
+        throw new Error('Sort must contain only one field');
+      }
+
       const currentYear = new Date().getFullYear();
       const year = (filters.year > 1877 && filters.year <= currentYear)
         ? filters.year
@@ -126,6 +146,7 @@ const resolvers = {
 
       const count = moviesArrayCursor.count();
       const movies = moviesArrayCursor
+        .sort(sort)
         .skip(offset)
         .limit(limit)
         .toArray();
