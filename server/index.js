@@ -3,7 +3,12 @@ const { ApolloServer, gql } = require('apollo-server');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
+const fetch = require('isomorphic-fetch')
 const { GraphQLTypeDate } = require('./scalars')
+
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const TOKEN_ENDPOINT = 'https://www.googleapis.com/oauth2/v4/token';
 
 const typeDefs = gql`
   scalar Date
@@ -105,7 +110,27 @@ const typeDefs = gql`
     users(name: String): [User]!
     movies(filters: MovieFilters, page: Pagination, sort: MovieSort): MovieResponse
   }
+
+  type AuthData {
+    _id: ID!
+    token: String!
+    email: String!
+  }
+
+  type Mutation {
+    oAuthGoogle(code: String!): AuthData
+  }
 `;
+
+const fetchGoolgeCredentials = async (code) => {
+  console.log(code);
+  return Promise.resolve({
+    code,
+    id: 'some id',
+    email: 'test@example.com',
+    token: 'sometoken',
+  });
+}
 
 const resolvers = {
   Date: GraphQLTypeDate,
@@ -157,6 +182,39 @@ const resolvers = {
       };
     },
   },
+  Mutation: {
+    async oAuthGoogle(parent, { code }, { db }) {
+      const credentials = {
+        code,
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        redirect_uri: 'http://localhost:3000',
+        grant_type: 'authorization_code',
+      }
+      console.log(credentials);
+
+      const data = await fetch(TOKEN_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        body: JSON.stringify(credentials),
+      })
+        .catch(e => {
+          console.warn('warn', e);
+          throw e;
+        });
+      console.log('token', data);
+
+      let authData = await fetchGoolgeCredentials(code, CLIENT_ID, CLIENT_SECRET);
+      return {
+        _id: authData.id,
+        token: authData.token,
+        email: authData.email,
+      }
+    }
+  }
 };
 
 async function start() {
