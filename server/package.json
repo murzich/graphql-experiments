@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "apollo-server": "^2.6.4",
+    "apollo-server": "^2.25.3",
     "dotenv": "^8.0.0",
     "graphql": "^14.3.1",
     "isomorphic-fetch": "^2.2.1",
